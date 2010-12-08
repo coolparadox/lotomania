@@ -4,6 +4,7 @@ import LotoMania
 
 main :: IO (Int)
 main = do
-	putStr (print_bets all_bets)
+	bets_str <- getContents
+	putStr (process_ranks bets_str)
 	return 0
 
