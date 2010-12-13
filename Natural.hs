@@ -1,6 +1,6 @@
 module Natural where
 
-newtype Natural = Natural Integer deriving (Show, Eq)
+newtype Natural = Natural Integer deriving (Show, Eq, Ord)
 
 toNatural :: Integer -> Natural
 toNatural x
@@ -20,4 +20,19 @@ instance Num Natural where
 	signum x
 		| x == (Natural 0) = 0
 		| otherwise = 1
+
+instance Integral Natural where
+	toInteger = fromNatural
+	quotRem x y = (toNatural q, toNatural r) where
+		(q, r) = quotRem (fromNatural x) (fromNatural y)
+
+instance Enum Natural where
+	toEnum i = toNatural (toInteger i)
+	fromEnum n = fromEnum (fromNatural n)
+	succ n = toNatural (succ (fromNatural n))
+	pred n = toNatural (pred (fromNatural n))
+
+instance Real Natural where
+	toRational n = toRational (fromNatural n)
+
 

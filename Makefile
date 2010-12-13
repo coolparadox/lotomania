@@ -1,7 +1,12 @@
-all: all_bets rank_bets sort_by_rank
+WORKERS = combine rank_bets sort_by_rank
 
-all_bets: *.hs
-	ghc --make -o $@ all_bets.hs
+all: dupla_sena.bz2
+
+dupla_sena.bz2: $(WORKERS)
+	./combine 50 6 | ./rank_bets 50 | ./sort_by_rank | bzip2 --best -c 1>$@
+
+combine: *.hs
+	ghc --make -o $@ combine.hs
 
 rank_bets: *.hs
 	ghc --make -o $@ rank_bets.hs
@@ -11,6 +16,6 @@ sort_by_rank: sort_by_rank.sh
 	ln -s $< $@
 
 clean:
-	rm -f all_bets rank_bets sort_by_rank *.o *.hi
+	rm -f combine rank_bets sort_by_rank *.o *.hi
 .PHONY: clean
 
