@@ -1,9 +1,12 @@
 WORKERS = combine rank_bets sort_by_rank
 
-all: dupla_sena.bz2
+all: $(WORKERS)
 
 dupla_sena.bz2: $(WORKERS)
 	./combine 50 6 | ./rank_bets 50 | ./sort_by_rank | bzip2 --best -c 1>$@
+
+lotomania.bz2: $(WORKERS)
+	./combine 100 50 | ./rank_bets 100 | ./sort_by_rank | bzip2 --best -c 1>$@
 
 combine: *.hs
 	ghc --make -o $@ combine.hs
