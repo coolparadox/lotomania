@@ -1,6 +1,6 @@
 module Natural where
 
-newtype Natural = Natural Integer deriving (Show, Eq, Ord)
+newtype Natural = Natural Integer deriving (Eq, Ord)
 
 toNatural :: Integer -> Natural
 toNatural x
@@ -35,4 +35,6 @@ instance Enum Natural where
 instance Real Natural where
 	toRational n = toRational (fromNatural n)
 
+instance Show Natural where
+	showsPrec p n = showsPrec p (fromNatural n)
 

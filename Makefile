@@ -1,4 +1,4 @@
-WORKERS = combine rank_bets sort_by_rank
+WORKERS = combine rank_bets sort_by_rank generate_bets
 
 all: $(WORKERS)
 
@@ -14,11 +14,14 @@ combine: *.hs
 rank_bets: *.hs
 	ghc --make -o $@ rank_bets.hs
 
+generate_bets: *.hs
+	ghc --make -o $@ generate_bets.hs
+
 sort_by_rank: sort_by_rank.sh
 	rm -f $@
 	ln -s $< $@
 
 clean:
-	rm -f combine rank_bets sort_by_rank *.o *.hi
+	rm -f combine rank_bets generate_bets sort_by_rank *.o *.hi
 .PHONY: clean
 
