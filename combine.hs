@@ -8,11 +8,11 @@ import CombAnal
 main :: IO (Int)
 main = do
 	sample_size:values <- getArgs
-	putStr (process_combinations sample_size values)
+	putStr (process sample_size values)
 	return 0
 
-process_combinations :: String -> [String] -> String
-process_combinations sample_size_str values = answer where
+process :: String -> [String] -> String
+process sample_size_str values = answer where
 	answer = print_combinations set
 	set = combine sample_size values
 	(sample_size, ""):[] = readDec sample_size_str
