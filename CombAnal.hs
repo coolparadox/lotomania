@@ -20,11 +20,10 @@ combination n k
 -- 	| n >= k = (combination (n-1) (k-1)) + (combination (n-1) k)
 -- 	| otherwise = 0
 
-combine :: [a] -> Natural -> [[a]]
-combine [] _ = []
-combine _ 0 = [[]]
-combine [x] 1 = [[x]]
-combine (x:xs) n = comb_x ++ comb_xs where
-	comb_x = map (x:) (combine xs (n-1))
-	comb_xs = combine xs n
+combine :: Natural -> [a] -> [[a]]
+combine 0 _ = [[]]
+combine _ [] = []
+combine n (x:xs) = comb_x ++ comb_xs where
+	comb_x = map (x:) (combine (n-1) xs)
+	comb_xs = combine n xs
 
