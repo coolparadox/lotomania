@@ -22,9 +22,6 @@ find $SPLIT_DIR -mindepth 1 -maxdepth 1 -type f | \
 sort | \
 sed -r -e "s/^/grep -v ${OTHER_GREP_OPTS_STRING} -f /" -e '$!s/$/ | \\/' 1>$GREP_SCRIPT_FILE
 
-echo 1>&2
-cat $GREP_SCRIPT_FILE 1>&2
-
 set +e ; sh $GREP_SCRIPT_FILE ; RCODE=$? ; set -e
 
 rm -rf $GREP_SCRIPT_FILE $SPLIT_DIR
