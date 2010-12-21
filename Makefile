@@ -1,4 +1,4 @@
-WORKERS = combination combine random_value comb_bet_step bet_step bets
+WORKERS = combination combine random_value vgrep comb_bet_step bet_step bets
 
 all: $(WORKERS)
 
@@ -10,6 +10,11 @@ combine: combine.hs CombAnal.hs Natural.hs
 
 random_value: random_value.hs
 	ghc --make -o $@ $<
+
+vgrep: vgrep.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
 
 comb_bet_step: comb_bet_step.sh
 	rm -f $@
@@ -27,6 +32,6 @@ bets: bets.sh
 	chmod a+x $@
 
 clean:
-	rm -f combination combine random_value comb_bet_step bet_step bets *.o *.hi
+	rm -f combination combine random_value vgrep comb_bet_step bet_step bets *.o *.hi
 .PHONY: clean
 
