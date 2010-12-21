@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# usage: ./bets TUPLE_SIZE BET_SIZE SET_SIZE 
+#
+
+set -e
+
+TUPLE_SIZE=$1
+BET_SIZE=$2
+SET_SIZE=$3
+
+ZIP='pigz -9c'
+
+COMBS_GZ_TARGET_FILE=$(mktemp)
+COMBS_GZ_SOURCE_FILE=$(mktemp)
+BET_FILE=$(mktemp)
+./combine $TUPLE_SIZE $(seq -s ' ' 1 $SET_SIZE) | $ZIP 1>$COMBS_GZ_TARGET_FILE
+while true ; do
+	mv $COMBS_GZ_TARGET_FILE $COMBS_GZ_SOURCE_FILE
+	set +e
+	./bet_step $BET_SIZE $COMBS_GZ_SOURCE_FILE $COMBS_GZ_TARGET_FILE 1>$BET_FILE
+	BET_STEP_RCODE=$?
+	set -e
+	test $BET_STEP_RCODE -ne 2 || break
+	test $BET_STEP_RCODE -eq 0 || {
+		echo "error: bet_step failure." 1>&2
+		exit 1
+	}
+	cat $BET_FILE
+done
+
+sed -e '/^[[:digit:]]/!d' $BET_FILE | while read PARTIAL_BET ; do
+	BET_VALUES_FILE=$(mktemp)
+	BET_MERGE_FILE=$(mktemp)
+	echo $PARTIAL_BET | tr ' ' '\n' 1>$BET_VALUES_FILE
+	HOW_MANY_VALUES=$(wc -l 0<$BET_VALUES_FILE)
+	while test $HOW_MANY_VALUES -lt $BET_SIZE ; do
+		cat $BET_VALUES_FILE 1>$BET_MERGE_FILE
+		./random_value 1 $SET_SIZE 1>>$BET_MERGE_FILE
+		sort -n $BET_MERGE_FILE | uniq 1>$BET_VALUES_FILE
+		HOW_MANY_VALUES=$(wc -l 0<$BET_VALUES_FILE)
+	done
+	cat $BET_VALUES_FILE | tr '\n' ' ' ; echo
+	rm -r $BET_VALUES_FILE $BET_MERGE_FILE
+done
+
+rm -f $COMBS_GZ_TARGET_FILE $COMBS_GZ_SOURCE_FILE $BET_FILE
+

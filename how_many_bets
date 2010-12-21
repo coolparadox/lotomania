@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# usage: ./how_many_bets TUPLE_SIZE BET_SIZE SET_SIZE
+
+set -e
+
+TUPLE_SIZE=$1
+BET_SIZE=$2
+SET_SIZE=$3
+
+HOW_MANY_TUPLES_PER_BET=$(./combination $TUPLE_SIZE $BET_SIZE)
+HOW_MANY_TUPLES_PER_SET=$(./combination $TUPLE_SIZE $SET_SIZE)
+
+ANSWER=$(echo "${HOW_MANY_TUPLES_PER_SET}/${HOW_MANY_TUPLES_PER_BET}+1" | bc)
+echo $ANSWER
+

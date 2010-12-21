@@ -1,4 +1,4 @@
-WORKERS = combination combine random_value
+WORKERS = combination combine random_value comb_bet_step bet_step bets
 
 all: $(WORKERS)
 
@@ -11,7 +11,22 @@ combine: combine.hs CombAnal.hs Natural.hs
 random_value: random_value.hs
 	ghc --make -o $@ $<
 
+comb_bet_step: comb_bet_step.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
+bet_step: bet_step.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
+bets: bets.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
 clean:
-	rm -f combination combine random_value *.o *.hi
+	rm -f combination combine random_value comb_bet_step bet_step bets *.o *.hi
 .PHONY: clean
 
