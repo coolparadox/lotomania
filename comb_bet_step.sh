@@ -77,10 +77,30 @@ test $HOW_MANY_COMBS -gt 0 || {
 COMB_VALUES_FILE=$(mktemp)
 COMB_NUMBER=$(./random_value 1 $HOW_MANY_COMBS)
 $UNZIP $FILTERED_COMBS_GZ_FILE | sed -n -e "${COMB_NUMBER}{p;q}" | unline 1>$COMB_VALUES_FILE
+
+# If requested, try to randomly gather more 'full-new-values' combinations for efficiency.
+MISSING_BET_VALUES=$((MISSING_BET_VALUES-HOW_MANY_NEW_BET_VALUES_WANTED))
+NEW_COMB_VALUES_FILE=$(mktemp)
+TIMEOUT_COUNTER=0
+while test $((MISSING_BET_VALUES/COMB_SIZE)) -gt 0 ; do
+	test $TIMEOUT_COUNTER -le 10 || break
+	TIMEOUT_COUNTER=$((TIMEOUT_COUNTER+1))
+	COMB_NUMBER=$(./random_value 1 $HOW_MANY_COMBS)
+	$UNZIP $FILTERED_COMBS_GZ_FILE | sed -n -e "${COMB_NUMBER}{p;q}" | unline 1>$NEW_COMB_VALUES_FILE
+	HOW_MANY_DISTINCT_VALUES=$(grep -v -F -x -f $COMB_VALUES_FILE $NEW_COMB_VALUES_FILE | wc -l)
+	test $HOW_MANY_DISTINCT_VALUES -ge $COMB_SIZE || continue
+	cat $NEW_COMB_VALUES_FILE >>$COMB_VALUES_FILE
+	MISSING_BET_VALUES=$((MISSING_BET_VALUES-COMB_SIZE))
+	TIMEOUT_COUNTER=0
+done
+rm -f $NEW_COMB_VALUES_FILE
+
+# Merge new gathered bet values with current ones.
 sort -n $BET_VALUES_SOURCE_FILE $COMB_VALUES_FILE | uniq 1>$BET_VALUES_TARGET_FILE
 rm -f $COMB_VALUES_FILE 
 unset FILTERED_COMBS_GZ_FILE
 
+# Rebuild the unhandled combinations file.
 BET_COMBS_FILE=$(mktemp)
 ./combine $COMB_SIZE $(line 0<$BET_VALUES_TARGET_FILE) 1>$BET_COMBS_FILE
 $UNZIP $COMBS_GZ_SOURCE_FILE | ./vgrep '-F -x' $BET_COMBS_FILE | $ZIP 1>$COMBS_GZ_TARGET_FILE
