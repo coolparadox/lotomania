@@ -22,5 +22,5 @@ TEMPLATE_TARGET_FILE="${TEMPLATE_NAME}.template"
 cp $TEMPLATE_TMP_FILE $TEMPLATE_TARGET_FILE
 
 rm -f $TEMPLATE_TMP_FILE
-echo "$TEMPLATE_NAME template file generated."
+echo "$TEMPLATE_NAME template file generated." 1>&2
 
