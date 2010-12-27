@@ -42,8 +42,16 @@ test $COMB_SIZE -gt 0 || {
 # Cycle through combinations, gathering the most valuable ones to form a bet.
 COMB_VALUES_FILE=$(mktemp)
 NEW_COMB_VALUES_FILE=$(mktemp)
-for DISTINCT_SIZE in $(seq $COMB_SIZE -1 1) ; do
-	$UNZIP $COMBS_GZ_SOURCE_FILE | while read COMB ; do
+EXCLUDE_PATTERNS_FILE=$(mktemp)
+HOW_MANY_FULL_DISTINCT_TRIALS=$((HOW_MANY_WANTED_BET_VALUES/COMB_SIZE))
+for DISTINCT_SIZE in $(seq $COMB_SIZE 0 $COMB_SIZE | head -n $HOW_MANY_FULL_DISTINCT_TRIALS) $(seq $((COMB_SIZE-1)) -1 1) ; do
+	if test $DISTINCT_SIZE -eq $COMB_SIZE ; then
+		sed -e 's/$/\\>/' -e 's/^/\\</' $COMB_VALUES_FILE 1>$EXCLUDE_PATTERNS_FILE
+	else
+		echo -n 1>$EXCLUDE_PATTERNS_FILE
+	fi
+	#echo "   exclude patterns: $(cat $EXCLUDE_PATTERNS_FILE | tr '\n' ' ')" 1>&2
+	$UNZIP $COMBS_GZ_SOURCE_FILE | ./vgrep '' $EXCLUDE_PATTERNS_FILE | while read COMB ; do
 		HOW_MANY_VALUES_FOUND=$(wc -l 0<$COMB_VALUES_FILE)
 		HOW_MANY_VALUES_MISSING=$((HOW_MANY_WANTED_BET_VALUES-HOW_MANY_VALUES_FOUND))
 		test $HOW_MANY_VALUES_MISSING -ge $DISTINCT_SIZE || break
@@ -52,9 +60,11 @@ for DISTINCT_SIZE in $(seq $COMB_SIZE -1 1) ; do
 		test $HOW_MANY_DISTINCT_VALUES -eq $DISTINCT_SIZE || continue
 		cat $COMB_VALUES_FILE 1>>$NEW_COMB_VALUES_FILE
 		sort -n $NEW_COMB_VALUES_FILE | uniq 1>$COMB_VALUES_FILE
+		echo -n ".${HOW_MANY_DISTINCT_VALUES}" 1>&2
+		test $HOW_MANY_DISTINCT_VALUES -ne $COMB_SIZE || break
 	done
 done
-rm -f $NEW_COMB_VALUES_FILE
+rm -f $NEW_COMB_VALUES_FILE $EXCLUDE_PATTERNS_FILE
 
 # Merge new gathered bet values with current ones.
 sort -m -n $BET_VALUES_SOURCE_FILE $COMB_VALUES_FILE | uniq 1>$BET_VALUES_TARGET_FILE

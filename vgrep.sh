@@ -11,6 +11,8 @@ set -e
 OTHER_GREP_OPTS_STRING="$1"
 PATTERN_FILE=$2
 
+test -s $PATTERN_FILE || exec cat
+
 N_CPUS=$(grep -E '^processor[[:blank:]]*:' /proc/cpuinfo | wc -l)
 SPLIT_DIR=$(mktemp -d)
 N_PATTTERNS=$(wc -l 0<$PATTERN_FILE)
