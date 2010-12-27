@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# usage: ./bets TUPLE_SIZE BET_SIZE SET_SIZE 
+# usage: ./bets TUPLE_SIZE-BET_SIZE-SET_SIZE 
 #
 
 set -e
@@ -9,40 +9,47 @@ TUPLE_SIZE=$1
 BET_SIZE=$2
 SET_SIZE=$3
 
-ZIP='pigz -9c'
+TEMPLATE_NAME="${TUPLE_SIZE}-${BET_SIZE}-${SET_SIZE}"
+TEMPLATE_FILE="${TEMPLATE_NAME}.template"
+test -s "$TEMPLATE_FILE" || ./make_template_file "$TEMPLATE_NAME"
 
-COMBS_GZ_TARGET_FILE=$(mktemp)
-COMBS_GZ_SOURCE_FILE=$(mktemp)
-BET_FILE=$(mktemp)
-./combine $TUPLE_SIZE $(seq -s ' ' 1 $SET_SIZE) | $ZIP 1>$COMBS_GZ_TARGET_FILE
-while true ; do
-	mv $COMBS_GZ_TARGET_FILE $COMBS_GZ_SOURCE_FILE
-	set +e
-	./bet_step $BET_SIZE $COMBS_GZ_SOURCE_FILE $COMBS_GZ_TARGET_FILE 1>$BET_FILE
-	BET_STEP_RCODE=$?
-	set -e
-	test $BET_STEP_RCODE -ne 2 || break
-	test $BET_STEP_RCODE -eq 0 || {
-		echo "error: bet_step failure." 1>&2
-		exit 1
-	}
-	cat $BET_FILE
-done
+TRANSLATION_FILE=$(mktemp)
 
-sed -e '/^[[:digit:]]/!d' $BET_FILE | while read PARTIAL_BET ; do
-	BET_VALUES_FILE=$(mktemp)
-	BET_MERGE_FILE=$(mktemp)
-	echo $PARTIAL_BET | tr ' ' '\n' 1>$BET_VALUES_FILE
-	HOW_MANY_VALUES=$(wc -l 0<$BET_VALUES_FILE)
-	while test $HOW_MANY_VALUES -lt $BET_SIZE ; do
-		cat $BET_VALUES_FILE 1>$BET_MERGE_FILE
-		./random_value 1 $SET_SIZE 1>>$BET_MERGE_FILE
-		sort -n $BET_MERGE_FILE | uniq 1>$BET_VALUES_FILE
-		HOW_MANY_VALUES=$(wc -l 0<$BET_VALUES_FILE)
+grep 'X' $TEMPLATE_FILE | while read BET ; do
+	EXCLUDE_FILE=$(mktemp)
+	echo $BET | tr ' ' '\n' | grep -v 'X' 1>$EXCLUDE_FILE
+	echo $BET | tr ' ' '\n' | grep 'X' | while read WHATEVER ; do
+		while true ; do
+			REPLACE_VALUE=$(./random_value 1 $SET_SIZE)
+			echo $REPLACE_VALUE | grep -v -q -F -x -f $EXCLUDE_FILE || continue
+			echo "s/X/${REPLACE_VALUE}/" 1>>$TRANSLATION_FILE
+			break
+		done
 	done
-	cat $BET_VALUES_FILE | tr '\n' ' ' ; echo
-	rm -r $BET_VALUES_FILE $BET_MERGE_FILE
+	rm -f $EXCLUDE_FILE
 done
 
-rm -f $COMBS_GZ_TARGET_FILE $COMBS_GZ_SOURCE_FILE $BET_FILE
+echo 's/\<[[:digit:]]+\>/R&/g' 1>>$TRANSLATION_FILE
+
+LAST_REPLACE_VALUE_FILE=$(mktemp)
+echo '1' 1>$LAST_REPLACE_VALUE_FILE
+seq 2 $SET_SIZE | shuf | while read REPLACE_TO ; do
+	REPLACE_FROM=$(cat $LAST_REPLACE_VALUE_FILE)
+	echo "s/\<R${REPLACE_FROM}\>/${REPLACE_TO}/" 1>>$TRANSLATION_FILE
+	echo $REPLACE_TO 1>$LAST_REPLACE_VALUE_FILE
+done
+REPLACE_FROM=$(cat $LAST_REPLACE_VALUE_FILE)
+echo "s/\<R${REPLACE_FROM}\>/1/" 1>>$TRANSLATION_FILE
+rm $LAST_REPLACE_VALUE_FILE
+
+REPLACED_BETS_FILE=$(mktemp)
+sed -r -f $TRANSLATION_FILE $TEMPLATE_FILE 1>$REPLACED_BETS_FILE
+rm -f $TRANSLATION_FILE
+
+while read UNSORTED_BET ; do
+	echo $UNSORTED_BET | tr ' ' '\n' | sort -n | tr '\n' ' '
+	echo
+done 0<$REPLACED_BETS_FILE | ./sort_bets
+
+rm -f $REPLACED_BETS_FILE
 

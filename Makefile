@@ -1,4 +1,4 @@
-WORKERS = combination combine random_value vgrep comb_bet_step bet_step bets
+WORKERS = combination combine random_value vgrep comb_bet_step bet_step bet_template make_template_file bets sort_bets
 
 all: $(WORKERS)
 
@@ -26,12 +26,27 @@ bet_step: bet_step.sh
 	ln -s $< $@
 	chmod a+x $@
 
+bet_template: bet_template.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
+make_template_file: make_template_file.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
 bets: bets.sh
 	rm -f $@
 	ln -s $< $@
 	chmod a+x $@
 
+sort_bets: sort_bets.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
 clean:
-	rm -f combination combine random_value vgrep comb_bet_step bet_step bets *.o *.hi
+	rm -f combination combine random_value vgrep comb_bet_step bet_step bet_template make_template_file bets sort_bets *.o *.hi
 .PHONY: clean
 
