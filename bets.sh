@@ -23,6 +23,7 @@ grep 'X' $TEMPLATE_FILE | while read BET ; do
 			REPLACE_VALUE=$(./random_value 1 $SET_SIZE)
 			echo $REPLACE_VALUE | grep -v -q -F -x -f $EXCLUDE_FILE || continue
 			echo "s/X/${REPLACE_VALUE}/" 1>>$TRANSLATION_FILE
+			echo $REPLACE_VALUE 1>>$EXCLUDE_FILE
 			break
 		done
 	done
