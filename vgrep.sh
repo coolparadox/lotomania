@@ -22,7 +22,7 @@ split -l $((N_PATTTERNS/N_CPUS/2+1)) - "$SPLIT_DIR/patterns_"
 GREP_SCRIPT_FILE=$(mktemp)
 find $SPLIT_DIR -mindepth 1 -maxdepth 1 -type f | \
 sort | \
-sed -r -e "s/^/grep -v ${OTHER_GREP_OPTS_STRING} -f /" -e '$!s/$/ | \\/' 1>$GREP_SCRIPT_FILE
+sed -r -e "s/^/LC_ALL=C grep -v ${OTHER_GREP_OPTS_STRING} -f /" -e '$!s/$/ | \\/' 1>$GREP_SCRIPT_FILE
 
 set +e ; sh $GREP_SCRIPT_FILE ; RCODE=$? ; set -e
 
