@@ -3,6 +3,7 @@
 # usage: ./how_many_bets TUPLE_SIZE BET_SIZE SET_SIZE
 
 set -e
+set -x
 
 TUPLE_SIZE=$1
 BET_SIZE=$2
