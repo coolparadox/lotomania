@@ -32,16 +32,35 @@ done
 
 echo 's/\<[[:digit:]]+\>/R&/g' 1>>$TRANSLATION_FILE
 
-LAST_REPLACE_VALUE_FILE=$(mktemp)
-echo '1' 1>$LAST_REPLACE_VALUE_FILE
-seq 2 $SET_SIZE | shuf | while read REPLACE_TO ; do
-	REPLACE_FROM=$(cat $LAST_REPLACE_VALUE_FILE)
-	echo "s/\<R${REPLACE_FROM}\>/${REPLACE_TO}/" 1>>$TRANSLATION_FILE
-	echo $REPLACE_TO 1>$LAST_REPLACE_VALUE_FILE
-done
-REPLACE_FROM=$(cat $LAST_REPLACE_VALUE_FILE)
-echo "s/\<R${REPLACE_FROM}\>/1/" 1>>$TRANSLATION_FILE
-rm $LAST_REPLACE_VALUE_FILE
+sort_values_by_histogram() {
+	tr ' ' '\n' | \
+	sed -r -e '/^[[:blank:]]*$/d' | \
+	./histogram $SET_SIZE | \
+	sort -n -k2 | \
+	sed -e 's/ .*//'
+}
+
+SORTED_VALUES_BY_TEMPLATE_FILE=$(mktemp)
+sed -e 's/X//g' $TEMPLATE_FILE | sort_values_by_histogram 1>$SORTED_VALUES_BY_TEMPLATE_FILE
+
+sort_results_by_histogram() {
+	tail -n5 | \
+	sed -r -e 's/.*- *//' -e 's/\<0//g' | \
+	sort_values_by_histogram
+}
+
+SORTED_VALUES_BY_RESULTS_FILE=$(mktemp)
+case $SET_SIZE in
+	25) ./resultados_lotofacil | sort_results_by_histogram ;;
+	*) seq 1 $SET_SIZE | shuf
+esac 1>$SORTED_VALUES_BY_RESULTS_FILE
+
+paste -d ' ' $SORTED_VALUES_BY_TEMPLATE_FILE $SORTED_VALUES_BY_RESULTS_FILE | \
+while read REPLACED REPLACER ; do
+	echo "s/\<R${REPLACED}\>/${REPLACER}/"
+done 1>>$TRANSLATION_FILE
+
+rm -f $SORTED_VALUES_BY_RESULTS_FILE $SORTED_VALUES_BY_TEMPLATE_FILE
 
 REPLACED_BETS_FILE=$(mktemp)
 sed -r -f $TRANSLATION_FILE $TEMPLATE_FILE 1>$REPLACED_BETS_FILE
@@ -53,4 +72,5 @@ while read UNSORTED_BET ; do
 done 0<$REPLACED_BETS_FILE | ./sort_bets
 
 rm -f $REPLACED_BETS_FILE
+
 
