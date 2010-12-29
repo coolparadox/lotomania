@@ -9,7 +9,7 @@ TUPLE_SIZE=$1
 BET_SIZE=$2
 SET_SIZE=$3
 
-ZIP='pigz --fast -c'
+ZIP='pigz -9c'
 
 COMBS_GZ_TARGET_FILE=$(mktemp)
 COMBS_GZ_SOURCE_FILE=$(mktemp)

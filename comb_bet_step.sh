@@ -10,7 +10,7 @@ COMBS_GZ_SOURCE_FILE=$2
 BET_VALUES_TARGET_FILE=$3
 COMBS_GZ_TARGET_FILE=$4
 
-ZIP='pigz --fast -c'
+ZIP='pigz -9c'
 UNZIP='pigz -dc'
 
 unline() {
