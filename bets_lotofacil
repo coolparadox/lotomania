@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -e
+
+usage() {
+	echo "usage: ./bets_lotofacil TUPLE_SIZE GROUP_LABEL" 1>&2
+	exit 1
+}
+
+TUPLE_SIZE=$1
+test -n "$TUPLE_SIZE" || usage
+shift
+GROUP_LABEL=$1
+test -n "$GROUP_LABEL" || usage
+shift
+test -z "$1" || usage
+
+RESULT_DIR="lotofacil/${GROUP_LABEL}"
+mkdir -p $RESULT_DIR
+
+BETS_FILE_NAME="${TUPLE_SIZE}-15-25.bets"
+BETS_FILE="${RESULT_DIR}/${BETS_FILE_NAME}"
+./bets "$TUPLE_SIZE" 15 25 1>$BETS_FILE
+(
+	cd $RESULT_DIR
+	split -d -l 2 -a 4 $BETS_FILE_NAME 'bets.'
+)
+
+bets_to_marker_data() {
+	local SECTOR='-1'
+	local LINE
+	local COLUMN
+	while read BET ; do
+		SECTOR=$((SECTOR+1))
+		echo $BET | sed -e 's/ *$//' -e 's/ /\n/g' | while read BET_VALUE ; do
+			LINE=$(echo "(${BET_VALUE}-1)%5" | bc)
+			COLUMN=$(echo "4-((${BET_VALUE}-1)/5)" | bc)
+			echo $SECTOR $LINE $COLUMN
+		done
+	done
+}
+
+find $RESULT_DIR -mindepth 1 -maxdepth 1 -type f -name 'bets.*' | while read BET_FILE ; do
+	MARKER_DATA_FILE=$(echo "$BET_FILE" | sed -e 's/\<bets\./marker_data./')
+	bets_to_marker_data 0<$BET_FILE 1>$MARKER_DATA_FILE
+done
+
+echo "files generated in directory '${RESULT_DIR}'." 1>&2
+
