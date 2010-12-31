@@ -18,15 +18,21 @@ test -z "$1" || usage
 RESULT_DIR="lotofacil/${GROUP_LABEL}"
 mkdir -p $RESULT_DIR
 
-BETS_FILE_NAME="${TUPLE_SIZE}-15-25.bets"
-BETS_FILE="${RESULT_DIR}/${BETS_FILE_NAME}"
-./bets "$TUPLE_SIZE" 15 25 1>$BETS_FILE
+ALL_BETS_FILE_NAME="${TUPLE_SIZE}-15-25.all"
+ALL_BETS_FILE="${RESULT_DIR}/${ALL_BETS_FILE_NAME}"
+./bets "$TUPLE_SIZE" 15 25 1>$ALL_BETS_FILE
 (
 	cd $RESULT_DIR
-	split -d -l 2 -a 4 $BETS_FILE_NAME 'bets.'
+	split -d -l 2 -a 4 $ALL_BETS_FILE_NAME 'bets.'
 )
 
-bets_to_marker_data() {
+##FIXME: debug
+#echo -n 1>$RESULT_DIR/bets.0000
+#for I in 0 1 ; do
+	#seq -s ' ' 1 25 1>>$RESULT_DIR/bets.0000
+#done
+
+bets_to_data() {
 	local SECTOR='-1'
 	local LINE
 	local COLUMN
@@ -40,9 +46,37 @@ bets_to_marker_data() {
 	done
 }
 
-find $RESULT_DIR -mindepth 1 -maxdepth 1 -type f -name 'bets.*' | while read BET_FILE ; do
-	MARKER_DATA_FILE=$(echo "$BET_FILE" | sed -e 's/\<bets\./marker_data./')
-	bets_to_marker_data 0<$BET_FILE 1>$MARKER_DATA_FILE
+data_to_metapost() {
+
+	X_ALL=82; X_ZERO=14; X_DELTA='12.75'
+	Y_ALL=140; Y_ZERO='60.5'; Y_DELTA='5.6'; SECTOR_DELTA=31
+
+	echo 'beginfig(-1);'
+	echo "draw (0,0)--(${X_ALL}mm,${Y_ALL}mm) withpen pencircle scaled 0 withcolor white;"
+	while read SECTOR LINE COLUMN ; do
+
+		SECTOR=$((1-SECTOR))
+		LINE=$((4-LINE))
+
+		X=$(echo "${X_ZERO} + ${COLUMN}*${X_DELTA}" | bc)
+		Y=$(echo "${Y_ZERO} + ${SECTOR}*${SECTOR_DELTA} + ${LINE}*${Y_DELTA}" | bc)
+
+		echo "draw (${X}mm,${Y}mm) withpen pencircle xscaled 15bp yscaled 10bp;"
+
+	done
+	echo 'endfig;'
+	echo 'end;'
+}
+
+find $RESULT_DIR -mindepth 1 -maxdepth 1 -type f -name 'bets.*' | while read BET_FILE_OLD ; do
+	ID=$(echo "$BET_FILE_OLD" | sed -e 's/.*\.//')
+	BET_FILE="$RESULT_DIR/${ID}.bets"
+	mv $BET_FILE_OLD $BET_FILE
+	DATA_FILE="$RESULT_DIR/${ID}.data"
+	bets_to_data 0<$BET_FILE 1>$DATA_FILE
+	METAPOST_FILE="$RESULT_DIR/${ID}.mp"
+	data_to_metapost 0<$DATA_FILE 1>$METAPOST_FILE
+	( cd $RESULT_DIR && mpost $ID )
 done
 
 echo "files generated in directory '${RESULT_DIR}'." 1>&2
