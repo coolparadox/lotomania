@@ -46,28 +46,48 @@ bets_to_data() {
 	done
 }
 
+metapost_bullet() {
+
+	COLOR=$1
+	SECTOR=$2
+	LINE=$3
+	COLUMN=$4
+
+	BULLET_WIDTH='3.5'
+	BULLET_HEIGHT='5'
+
+	X_ZERO='25.5'; X_DELTA='5.5'; SECTOR_X_DELTA='31'
+	Y_ZERO='10'; Y_DELTA='12.9'
+
+	local X=$(echo "${X_ZERO} + ${SECTOR}*${SECTOR_X_DELTA} + ${LINE}*${X_DELTA}" | bc)
+	local Y=$(echo "${Y_ZERO} + ${COLUMN}*${Y_DELTA}" | bc)
+	echo "draw (${X}mm,${Y}mm) withcolor $COLOR withpen pencircle xscaled ${BULLET_WIDTH}mm yscaled ${BULLET_HEIGHT}mm;"
+
+}
+
 data_to_metapost() {
 
-	X_ALL=82; X_ZERO=14; X_DELTA='12.75'
-	Y_ALL=140; Y_ZERO='60.5'; Y_DELTA='5.6'; SECTOR_DELTA=31
+	local LABEL="$1"
 
+	echo 'prologues := 3;'
 	echo 'beginfig(-1);'
-	echo "draw (0,0)--(${X_ALL}mm,${Y_ALL}mm) withpen pencircle scaled 0 withcolor white;"
-	while read SECTOR LINE COLUMN ; do
+	echo "draw (0,0) withpen pencircle scaled 0 withcolor white;"
 
-		SECTOR=$((1-SECTOR))
-		LINE=$((4-LINE))
-
-		X=$(echo "${X_ZERO} + ${COLUMN}*${X_DELTA}" | bc)
-		Y=$(echo "${Y_ZERO} + ${SECTOR}*${SECTOR_DELTA} + ${LINE}*${Y_DELTA}" | bc)
-
-		echo "draw (${X}mm,${Y}mm) withpen pencircle xscaled 15bp yscaled 10bp;"
-
+	echo -e "1\n25" | bets_to_data | while read SECTOR LINE COLUMN ; do
+		metapost_bullet 'white' $SECTOR $LINE $COLUMN
 	done
+
+	while read SECTOR LINE COLUMN ; do
+		metapost_bullet 'black' $SECTOR $LINE $COLUMN
+	done
+
+	echo "label.lft(\"${LABEL}\",(130mm,10mm))"
+
 	echo 'endfig;'
 	echo 'end;'
 }
 
+ERR_FILE=$(mktemp)
 find $RESULT_DIR -mindepth 1 -maxdepth 1 -type f -name 'bets.*' | while read BET_FILE_OLD ; do
 	ID=$(echo "$BET_FILE_OLD" | sed -e 's/.*\.//')
 	BET_FILE="$RESULT_DIR/${ID}.bets"
@@ -75,9 +95,21 @@ find $RESULT_DIR -mindepth 1 -maxdepth 1 -type f -name 'bets.*' | while read BET
 	DATA_FILE="$RESULT_DIR/${ID}.data"
 	bets_to_data 0<$BET_FILE 1>$DATA_FILE
 	METAPOST_FILE="$RESULT_DIR/${ID}.mp"
-	data_to_metapost 0<$DATA_FILE 1>$METAPOST_FILE
-	( cd $RESULT_DIR && mpost $ID )
+	LABEL="${GROUP_LABEL}-${ID}"
+	data_to_metapost "$LABEL" 0<$DATA_FILE 1>$METAPOST_FILE
+	( cd $RESULT_DIR && mpost $ID 1>$ERR_FILE 2>&1 ) || {
+		cat $ERR_FILE 1>&2
+		exit 1
+	}
+	PS_FILE="$RESULT_DIR/${ID}.ps"
+	BBOX_WIDTH=$(identify $PS_FILE | awk '{print $3}' | awk -Fx '{print $1}')
+	BBOX_HEIGHT=$(identify $PS_FILE | awk '{print $3}' | awk -Fx '{print $2}')
+	( cd $RESULT_DIR && ps2pdf -dDEVICEWIDTHPOINTS=${BBOX_WIDTH} -dDEVICEHEIGHTPOINTS=$((BBOX_HEIGHT+41)) "${ID}.ps" )
 done
+rm -f $ERR_FILE
+
+PDF_FILES=$(find $RESULT_DIR -mindepth 1 -maxdepth 1 -type f -name '*.pdf' -exec basename '{}' ';' | sort -n | tr '\n' ' ')
+( cd $RESULT_DIR && gs -q -sPAPERSIZE=a4 -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='all_bets.pdf' $PDF_FILES )
 
 echo "files generated in directory '${RESULT_DIR}'." 1>&2
 
