@@ -1,4 +1,4 @@
-WORKERS = combination combine random_value vgrep comb_bet_step bet_step bet_template make_template_file bets sort_bets check_matches histogram
+WORKERS = combination combine random_value vgrep comb_bet_step bet_step bet_template make_template_file bets sort_bets check_matches histogram generate_bets
 
 all: $(WORKERS)
 
@@ -56,7 +56,12 @@ histogram: histogram.sh
 	ln -s $< $@
 	chmod a+x $@
 
+generate_bets: generate_bets.sh
+	rm -f $@
+	ln -s $< $@
+	chmod a+x $@
+
 clean:
-	rm -f combination combine random_value vgrep comb_bet_step bet_step bet_template make_template_file bets sort_bets check_matches histogram *.o *.hi
+	rm -f combination combine random_value vgrep comb_bet_step bet_step bet_template make_template_file bets sort_bets check_matches histogram generate_bets *.o *.hi
 .PHONY: clean
 
