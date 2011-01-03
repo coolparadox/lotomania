@@ -53,6 +53,7 @@ sort_results_by_histogram() {
 SORTED_VALUES_BY_RESULTS_FILE=$(mktemp)
 case $SET_SIZE in
 	25) ./resultados_lotofacil | sort_results_by_histogram ;;
+	50) ./resultados_duplasena | sort_results_by_histogram ;;
 	*) seq 1 $SET_SIZE | shuf
 esac 1>$SORTED_VALUES_BY_RESULTS_FILE
 
