@@ -71,7 +71,7 @@ for DISTINCT_SIZE in $(seq $((COMB_SIZE-1)) -1 1) ; do
 		./combine $EXCLUDE_COMB_SIZE $(line 0<$BET_VALUES_TARGET_FILE) | line2regexp 1>$EXCLUDE_PATTERNS_FILE
 		INCLUDE_COMB_SIZE=$((COMB_SIZE-DISTINCT_SIZE))
 		./combine $INCLUDE_COMB_SIZE $(line 0<$BET_VALUES_TARGET_FILE) | line2regexp 1>$INCLUDE_PATTERN_FILE
-		COMB=$( $UNZIP 0<$COMBS_GZ_SOURCE_FILE | ./vgrep '' $EXCLUDE_PATTERNS_FILE | grep -f $INCLUDE_PATTERN_FILE | head -n1 )
+		COMB=$( $UNZIP 0<$COMBS_GZ_SOURCE_FILE | ./vgrep '--line-buffered' $EXCLUDE_PATTERNS_FILE | grep --line-buffered -f $INCLUDE_PATTERN_FILE | head -n1 )
 		test -n "$COMB" || break
 		echo $COMB | unline 1>$NEW_COMB_VALUES_FILE
 		HOW_MANY_DISTINCT_VALUES=$(grep -v -F -x -f $BET_VALUES_TARGET_FILE $NEW_COMB_VALUES_FILE | wc -l)
