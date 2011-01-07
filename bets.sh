@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# usage: ./bets TUPLE_SIZE-BET_SIZE-SET_SIZE 
+# usage: ./bets TUPLE_SIZE BET_SIZE SET_SIZE 
 #
 
 set -e
