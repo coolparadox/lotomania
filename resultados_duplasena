@@ -6,6 +6,7 @@ RESULTS_URL='http://www1.caixa.gov.br/loterias/_arquivos/loterias/d_dplsen.zip'
 RESULTS_ZIP_FILE=$(mktemp)
 
 wget -q -O $RESULTS_ZIP_FILE "$RESULTS_URL"
+echo "$(basename $RESULTS_URL) downloaded." 1>&2
 
 unzip -p $RESULTS_ZIP_FILE D_DPLSEN.HTM | \
 tidy -qi 2>/dev/null | \
