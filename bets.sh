@@ -37,7 +37,7 @@ sort_values_by_histogram() {
 	sed -r -e '/^[[:blank:]]*$/d' | \
 	./histogram $SET_SIZE | \
 	shuf | \
-	sort -n -k2 | \
+	sort -r -n -k2 | \
 	sed -e 's/ .*//'
 }
 
