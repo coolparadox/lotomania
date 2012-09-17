@@ -3,10 +3,10 @@
 set -e
 
 RESULTS_URL='http://www1.caixa.gov.br/loterias/_arquivos/loterias/D_lotfac.zip'
-RESULTS_ZIP_FILE=$(mktemp)
+RESULTS_ZIP_FILE='/tmp/D_lotfac.zip'
 
+test -s $RESULTS_ZIP_FILE || \
 wget -q -O $RESULTS_ZIP_FILE "$RESULTS_URL"
-echo "$(basename $RESULTS_URL) downloaded." 1>&2                                                                            
 
 unzip -p $RESULTS_ZIP_FILE D_LOTFAC.HTM | \
 tidy -qi 2>/dev/null | \
@@ -28,6 +28,4 @@ xmlstarlet sel -T -t -m '/html/body/table[1]/tr[position()!=1]' -v 'td[1]' -o ' 
 	-v 'td[16]' -o ' ' \
 	-v 'td[17]' -o ' ' \
 	-n
-
-rm -f $RESULTS_ZIP_FILE
 
